@@ -1,0 +1,477 @@
+{
+  "name": "Estación meteorológica Chivilcoy a Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 25,55 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "796165fa-1cd0-4868-8c39-e06e12a91bcd",
+      "name": "A los 25 y 55 de cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://chivilcoy.gov.ar/inta/api.php",
+        "options": {}
+      },
+      "id": "ad7b83e5-3d36-40c9-bd37-e31e899628a4",
+      "name": "Leer estación Chivilcoy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const estado = $getWorkflowStaticData('global');\nconst hechas = estado.lecturasEmisoras || 0;\nconst data = $input.first().json;\nconst sensores = (data.sensores && data.sensores.datosSensores) || [];\nconst valor = (nombre) => {\n  const s = sensores.find((x) => x.nombreSensor === nombre);\n  if (!s) return '';\n  const n = parseFloat(s.valor);\n  return isNaN(n) ? '' : n;\n};\nconst lectura = hechas + 1;\nestado.lecturasEmisoras = lectura;\nconst actual = {\n  fecha: (data.sensores && data.sensores.fechaUltimaActualizacionDatos) || '',\n  temperatura: valor('Temperatura de Aire exterior'),\n  humedad: valor('Humedad de Aire exterior'),\n  lluvia: valor('Lluvia Caida'),\n  viento: valor('Vel. Viento'),\n  sensacion: valor('Sensación Térmica'),\n  lectura: lectura,\n};\nconst informe = [\n  'Estado del tiempo en Chivilcoy (estación INTA - Municipalidad)',\n  'Datos actualizados: ' + actual.fecha,\n  '',\n  'Temperatura: ' + actual.temperatura + ' °C',\n  'Sensación térmica: ' + actual.sensacion + ' °C',\n  'Humedad: ' + actual.humedad + ' %',\n  'Viento: ' + actual.viento + ' km/h',\n  'Lluvia caída: ' + actual.lluvia + ' mm',\n].join('\\n');\nreturn [{ json: Object.assign({}, actual, { informe: informe }) }];"
+      },
+      "id": "fc24faaf-3ffd-4372-abf8-5e8132e7baeb",
+      "name": "Extraer datos y contar lecturas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1IDlj4OsG3b5ZMrsqq4rSR9PYl5li-GN8i9a8WUse8EA",
+          "cachedResultName": "Reporte Estación Meteorológica Chivilcoy"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultName": "Hoja 1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha y hora": "={{ $json.fecha }}",
+            "Temperatura (°C)": "={{ $json.temperatura }}",
+            "Humedad (%)": "={{ $json.humedad }}",
+            "Lluvia caída (mm)": "={{ $json.lluvia }}",
+            "Velocidad del viento (km/h)": "={{ $json.viento }}",
+            "Sensación térmica (°C)": "={{ $json.sensacion }}",
+            "N° de lectura": "={{ $json.lectura }}"
+          },
+          "schema": [
+            {
+              "id": "Fecha y hora",
+              "displayName": "Fecha y hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Temperatura (°C)",
+              "displayName": "Temperatura (°C)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Humedad (%)",
+              "displayName": "Humedad (%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Lluvia caída (mm)",
+              "displayName": "Lluvia caída (mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Velocidad del viento (km/h)",
+              "displayName": "Velocidad del viento (km/h)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Sensación térmica (°C)",
+              "displayName": "Sensación térmica (°C)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "N° de lectura",
+              "displayName": "N° de lectura",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9dad175f-3df9-49d5-9368-49b994f4edcd",
+      "name": "Agregar fila a Hoja 1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qCj8w1yteIyoXC1R",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "id": "00897cd8-e9b3-48c4-ab2f-4d07ba7ff8be",
+      "name": "Esperar 2 minutos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        -96
+      ],
+      "webhookId": "0f11c560-f799-439d-80f8-cb6350aa0909"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1IDlj4OsG3b5ZMrsqq4rSR9PYl5li-GN8i9a8WUse8EA",
+          "cachedResultName": "Reporte Estación Meteorológica Chivilcoy"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "106856531",
+          "cachedResultName": "Hoja 3"
+        },
+        "options": {}
+      },
+      "id": "70394310-f014-46ce-ab2d-3300c79b4b09",
+      "name": "Leer emisoras inscriptas",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qCj8w1yteIyoXC1R",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "edudelillo@gmail.com, hoperetto@gmail.com",
+        "subject": "=Estado del tiempo en Chivilcoy - {{ $(\"Extraer datos y contar lecturas\").first().json.fecha }}",
+        "emailType": "text",
+        "message": "={{ $(\"Extraer datos y contar lecturas\").first().json.informe }}",
+        "options": {
+          "appendAttribution": false,
+          "bccList": "={{ $(\"Leer emisoras inscriptas\").all().map(i => String(i.json.email || \"\").trim()).filter(e => e.includes(\"@\")).join(\", \") }}"
+        }
+      },
+      "id": "f284dc46-d7e7-4d44-8c79-d8f4af01ecae",
+      "name": "Enviar informe por email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        -96
+      ],
+      "executeOnce": true,
+      "webhookId": "5c02e5a9-aafe-4b6f-b298-6a601e4de411",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "f9RN4wyT2azux3er",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Inscripción: informe del tiempo de Chivilcoy",
+        "formDescription": "Las emisoras inscriptas reciben el estado del tiempo de la estación meteorológica de Chivilcoy a los 27 y 57 minutos de cada hora. Al tocar Inscribirme, la emisora queda guardada y el formulario vuelve a aparecer vacío para cargar otra.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre de la emisora",
+              "fieldName": "emisora",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "fieldName": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "WhatsApp (con código de país y área, ej: +5492346123456)",
+              "fieldName": "whatsapp"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Inscribirme",
+          "path": "inscripcion-emisoras",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "redirect",
+              "redirectUrl": "https://eledu-26.app.n8n.cloud/form/inscripcion-emisoras"
+            }
+          }
+        }
+      },
+      "id": "7727e277-4293-4fba-b471-a61f9da0b38f",
+      "name": "Formulario de inscripción de emisoras",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        192
+      ],
+      "webhookId": "2c6ddabc-2950-48f3-80b0-972cd80602d1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1IDlj4OsG3b5ZMrsqq4rSR9PYl5li-GN8i9a8WUse8EA",
+          "cachedResultName": "Reporte Estación Meteorológica Chivilcoy"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 106856531,
+          "cachedResultName": "Hoja 3"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "emisora": "={{ $json.emisora }}",
+            "email": "={{ $json.email }}",
+            "whatsapp": "={{ $json.whatsapp }}",
+            "submittedAt": "={{ $now.setZone(\"America/Buenos_Aires\").toFormat(\"dd/MM/yyyy HH:mm\") }}",
+            "formMode": "={{ $json.formMode }}"
+          },
+          "schema": [
+            {
+              "id": "emisora",
+              "displayName": "emisora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "submittedAt",
+              "displayName": "submittedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "formMode",
+              "displayName": "formMode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a55ea058-2c15-4ffb-baa8-209fba7d92d8",
+      "name": "Guardar inscripto en Hoja 3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qCj8w1yteIyoXC1R",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "A los 25 y 55 de cada hora": {
+      "main": [
+        [
+          {
+            "node": "Leer estación Chivilcoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer estación Chivilcoy": {
+      "main": [
+        [
+          {
+            "node": "Extraer datos y contar lecturas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer datos y contar lecturas": {
+      "main": [
+        [
+          {
+            "node": "Agregar fila a Hoja 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Esperar 2 minutos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 2 minutos": {
+      "main": [
+        [
+          {
+            "node": "Leer emisoras inscriptas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer emisoras inscriptas": {
+      "main": [
+        [
+          {
+            "node": "Enviar informe por email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulario de inscripción de emisoras": {
+      "main": [
+        [
+          {
+            "node": "Guardar inscripto en Hoja 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "America/Buenos_Aires"
+  },
+  "versionId": "228a960b-b655-4b36-a4d9-37a02c761f00",
+  "meta": {
+    "instanceId": "846369e8cb69902c30681d5d0796f7e4bcbf554f57196675c1841e56ce24591d"
+  },
+  "nodeGroups": [
+    {
+      "id": "d6cf2211-e6c6-461e-9db2-8518d38170e2",
+      "name": "Tomar lectura",
+      "nodeIds": [
+        "ad7b83e5-3d36-40c9-bd37-e31e899628a4",
+        "fc24faaf-3ffd-4372-abf8-5e8132e7baeb"
+      ],
+      "description": "Consulta la estación a los 25 y 55 de cada hora y numera la lectura, sin límite de cantidad"
+    },
+    {
+      "id": "9940e2dd-9d4e-4248-a957-5dd5c17ad1ee",
+      "name": "Avisar a las emisoras",
+      "nodeIds": [
+        "00897cd8-e9b3-48c4-ab2f-4d07ba7ff8be",
+        "70394310-f014-46ce-ab2d-3300c79b4b09",
+        "f284dc46-d7e7-4d44-8c79-d8f4af01ecae"
+      ],
+      "description": "Dos minutos después de cada lectura manda el informe a los dos responsables y, en copia oculta, a las radios de Hoja 3"
+    }
+  ],
+  "id": "awv5AfOErakNFXNn",
+  "tags": []
+}
